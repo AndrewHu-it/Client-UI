@@ -52,15 +52,38 @@ export default function Node() {
   }, []);
 
   // Prepare data structures for display
-  const growthEntries = Array.isArray(growthData)
-    ? growthData
-    : growthData && !growthData.message
-    ? Object.entries(growthData).map(([date, count]) => ({ date, count }))
+  const growthPayload = growthData?.data?.data ?? growthData?.data ?? growthData;
+  const growthEntries = Array.isArray(growthPayload)
+    ? growthPayload
+    : growthPayload && typeof growthPayload === 'object'
+    ? Object.entries(growthPayload).map(([date, count]) => ({ date, count }))
     : [];
   const nodesArray = allNodes
     ? Object.values(allNodes).filter(item => item && typeof item === 'object' && 'node_id' in item)
     : [];
-  const sortedNodes = [...nodesArray].sort((a, b) => new Date(b.date_joined.$date) - new Date(a.date_joined.$date));
+  const sortedNodes = [...nodesArray].sort((a, b) => b.tasks_completed - a.tasks_completed);
+  const [searchNodeId, setSearchNodeId] = useState('');
+  const [searchData, setSearchData] = useState(null);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState(null);
+  const displayedNodes = searchData ? [searchData] : sortedNodes;
+  const handleSearch = async () => {
+    setSearchLoading(true);
+    setSearchError(null);
+    setSearchData(null);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/node/node-info/${searchNodeId}`);
+      if (!res.ok) {
+        throw new Error(res.status === 404 ? `Node '${searchNodeId}' not found` : `Error ${res.status}: ${res.statusText}`);
+      }
+      const data = await res.json();
+      setSearchData(data);
+    } catch (e) {
+      setSearchError(e.message);
+    } finally {
+      setSearchLoading(false);
+    }
+  };
 
   if (loading) return <p>Loading summary statistics…</p>;
   if (error) return <p>Error: {error}</p>;
@@ -90,7 +113,7 @@ export default function Node() {
                 {growthEntries.map(({ date, count }) => (
                   <tr key={date}>
                     <td>{new Date(date).toLocaleDateString()}</td>
-                    <td>{count}</td>
+                    <td>{typeof count === 'object' ? JSON.stringify(count) : count}</td>
                   </tr>
                 ))}
               </tbody>
@@ -101,6 +124,24 @@ export default function Node() {
       {allNodes && (
         <div>
           <h2>All Nodes</h2>
+          <div style={{ marginBottom: '1rem' }}>
+            <input
+              type="text"
+              value={searchNodeId}
+              onChange={e => {
+                setSearchNodeId(e.target.value);
+                if (!e.target.value) {
+                  setSearchData(null);
+                  setSearchError(null);
+                }
+              }}
+              placeholder="Enter Node ID"
+            />
+            <button onClick={handleSearch} disabled={!searchNodeId || searchLoading}>
+              {searchLoading ? 'Loading...' : 'Search'}
+            </button>
+          </div>
+          {searchError && <div style={{ color: 'red' }}>Error: {searchError}</div>}
           <table>
             <thead>
               <tr>
@@ -108,7 +149,6 @@ export default function Node() {
                 <th>Joined</th>
                 <th>Status</th>
                 <th>Tasks Completed</th>
-                <th>Tasks Failed</th>
                 <th>Cores</th>
                 <th>CPU</th>
                 <th>GPU</th>
@@ -116,13 +156,12 @@ export default function Node() {
               </tr>
             </thead>
             <tbody>
-              {sortedNodes.map(node => (
+              {displayedNodes.map(node => (
                 <tr key={node.node_id}>
                   <td>{node.name}</td>
                   <td>{new Date(node.date_joined.$date).toLocaleString()}</td>
                   <td>{node.available ? 'Active' : 'Inactive'}</td>
                   <td>{node.tasks_completed}</td>
-                  <td>{node.tasks_failed}</td>
                   <td>{node.computer_specs?.cores}</td>
                   <td>{node.computer_specs?.cpu}</td>
                   <td>{node.computer_specs?.gpu}</td>
