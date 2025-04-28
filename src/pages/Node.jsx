@@ -1,4 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 export default function Node() {
   const [stats, setStats] = useState(null);
@@ -51,13 +64,32 @@ export default function Node() {
     fetchAllNodes();
   }, []);
 
-  // Prepare data structures for display
-  const growthPayload = growthData?.data?.data ?? growthData?.data ?? growthData;
-  const growthEntries = Array.isArray(growthPayload)
-    ? growthPayload
-    : growthPayload && typeof growthPayload === 'object'
-    ? Object.entries(growthPayload).map(([date, count]) => ({ date, count }))
-    : [];
+  // Prepare data for line chart safely
+  const intervals = growthData?.intervals || {};
+  const startingDate = growthData?.starting_date ? new Date(growthData.starting_date) : new Date();
+  const intervalSizeMs = growthData?.interval_size ? growthData.interval_size * 1000 : 0;
+  const intervalEntries = Object.entries(intervals)
+    .map(([key, val]) => {
+      const idx = parseInt(key.split('_')[1], 10) - 1;
+      const time = new Date(startingDate.getTime() + idx * intervalSizeMs);
+      return { time, val };
+    })
+    .sort((a, b) => a.time - b.time);
+  const labels = intervalEntries.map(item => item.time.toLocaleDateString());
+  const dataPoints = intervalEntries.map(item => item.val);
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: 'Total Nodes Over Time',
+        data: dataPoints,
+        borderColor: 'blue',
+        backgroundColor: 'rgba(0, 0, 255, 0.2)',
+        tension: 0.4
+      }
+    ]
+  };
+
   const nodesArray = allNodes
     ? Object.values(allNodes).filter(item => item && typeof item === 'object' && 'node_id' in item)
     : [];
@@ -98,26 +130,14 @@ export default function Node() {
       </ul>
       {growthData && (
         <div>
-          <h2>Node Growth Data</h2>
+          <h2>Node Growth Over Time</h2>
           {growthData.message ? (
             <p>{growthData.message}</p>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Count</th>
-                </tr>
-              </thead>
-              <tbody>
-                {growthEntries.map(({ date, count }) => (
-                  <tr key={date}>
-                    <td>{new Date(date).toLocaleDateString()}</td>
-                    <td>{typeof count === 'object' ? JSON.stringify(count) : count}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <Line
+              data={chartData}
+              options={{ responsive: true, scales: { y: { beginAtZero: true } } }}
+            />
           )}
         </div>
       )}

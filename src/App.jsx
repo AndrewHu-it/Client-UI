@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Node from './pages/Node';
+import Task from './pages/Task'; // Import the new Task component
 
 export default function App() {
   return (
@@ -15,6 +16,8 @@ export default function App() {
             <li><Link to="/about">About</Link></li>
             <li><Link to="/contact">Contact</Link></li>
             <li><Link to="/node">Node</Link></li>
+            <li><Link to="/task">Task</Link></li> {/* Add navigation link to Task */}
+
           </ul>
         </nav>
       </header>
@@ -25,6 +28,8 @@ export default function App() {
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/node" element={<Node />} />
+          <Route path="/task" element={<Task />} /> {/* Add route for Task */}
+
         </Routes>
       </main>
 
