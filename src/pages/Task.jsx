@@ -8,12 +8,21 @@ export default function Task() {
   const [numTasks, setNumTasks] = useState(16);
   const [region, setRegion] = useState({ x_min: -2.0, x_max: 1.0, y_min: -1.5, y_max: 1.5 });
   const [resolution, setResolution] = useState({ x_resolution: 3840, y_resolution: 2160 });
+  const [color, setColor] = useState('simple_rgb');
   const [responseData, setResponseData] = useState(null);
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [taskStats, setTaskStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState(null);
+  const [filterMinDate, setFilterMinDate] = useState('');
+  const [filterMaxDate, setFilterMaxDate] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterClientIdSelect, setFilterClientIdSelect] = useState('');
+  const [filterJobId, setFilterJobId] = useState('');
+  const [jobsList, setJobsList] = useState([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [jobsError, setJobsError] = useState(null);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -36,7 +45,9 @@ export default function Task() {
           resolution: {
             x_resolution: Number(resolution.x_resolution),
             y_resolution: Number(resolution.y_resolution)
-          }
+          },
+          // ⚠️ ADDED: send along the chosen palette
+          color
         }
       };
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/client/job`, {
@@ -54,6 +65,31 @@ export default function Task() {
     }
   };
 
+  const handleFetchJobs = async () => {
+    setJobsLoading(true);
+    setJobsError(null);
+    try {
+      const filters = {};
+      if (filterMinDate) filters.min_date = new Date(filterMinDate).toISOString();
+      if (filterMaxDate) filters.max_date = new Date(filterMaxDate).toISOString();
+      if (filterStatus) filters.status = filterStatus;
+      if (filterClientIdSelect) filters.client_id = filterClientIdSelect;
+      if (filterJobId) filters.job_id = filterJobId;
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/client/all-jobs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(filters)
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setJobsList(data.jobs || []);
+    } catch (e) {
+      setJobsError(e.message);
+    } finally {
+      setJobsLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchTaskStats = async () => {
       try {
@@ -68,6 +104,7 @@ export default function Task() {
       }
     };
     fetchTaskStats();
+    handleFetchJobs();
   }, []);
 
   return (
@@ -103,7 +140,21 @@ export default function Task() {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
               </select>
-            </label>
+              </label>
+
+              {/* ⚠️ ADDED: color-palette selector */}
+              <label>
+              Color:
+              <select value={color} onChange={e => setColor(e.target.value)}>
+                <option value="simple_rgb">RGB</option>
+                <option value="classic_mono">Classic Mono</option>
+                <option value="escape_time_spectrum">Escape Time Spectrum</option>
+                <option value="inferno_depth">Inferno Depth</option>
+                <option value="deep_ocean">Deep Ocean</option>
+                <option value="galactic">Galactic</option>
+                <option value="fractal_forest">Fractal Forest</option>
+              </select>
+              </label>
             <label>
               Number of Tasks:
               <input type="number" value={numTasks} min={1} onChange={e => setNumTasks(e.target.value)} />
@@ -158,6 +209,55 @@ export default function Task() {
             <li>Completed Tasks: {taskStats.completed_tasks}</li>
           </ul>
         ) : null}
+      </div>
+      <div style={{ marginTop: '2rem' }}>
+        <h2>All Jobs</h2>
+        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          <input type="datetime-local" value={filterMinDate} onChange={e => setFilterMinDate(e.target.value)} />
+          <input type="datetime-local" value={filterMaxDate} onChange={e => setFilterMaxDate(e.target.value)} />
+          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <option value="">All Statuses</option>
+            <option value="COMPLETED">COMPLETED</option>
+            <option value="TASKS-ASSIGNED">TASKS-ASSIGNED</option>
+            <option value="AVAILABLE">AVAILABLE</option>
+          </select>
+          <input placeholder="Client ID" type="text" value={filterClientIdSelect} onChange={e => setFilterClientIdSelect(e.target.value)} />
+          <input placeholder="Job ID" type="text" value={filterJobId} onChange={e => setFilterJobId(e.target.value)} />
+          <button onClick={handleFetchJobs} disabled={jobsLoading}>{jobsLoading ? 'Loading...' : 'Fetch Jobs'}</button>
+        </div>
+        {jobsError && <p style={{ color: 'red' }}>Error: {jobsError}</p>}
+        {jobsLoading ? (
+          <p>Loading jobs…</p>
+        ) : (
+          <table>
+            <thead>
+              <tr>
+                <th>Job ID</th>
+                <th>Client ID</th>
+                <th>Description</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th># Tasks</th>
+                <th>Created At</th>
+                <th>Completed At</th>
+              </tr>
+            </thead>
+            <tbody>
+              {jobsList.map(job => (
+                <tr key={job.job_id}>
+                  <td>{job.job_id}</td>
+                  <td>{job.client_id}</td>
+                  <td>{job.job_description}</td>
+                  <td>{job.priority}</td>
+                  <td>{job.status}</td>
+                  <td>{job.num_tasks}</td>
+                  <td>{new Date(job.created_at.$date).toLocaleString()}</td>
+                  <td>{job.completed_at ? new Date(job.completed_at).toLocaleString() : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
       {submitError && <div style={{ color: 'red', marginTop: '1rem' }}>Error: {submitError}</div>}
       {responseData && (
