@@ -1,2 +1,256 @@
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Arial', sans-serif; background: #f0f2f5; color: #333; }
+/* Global Theme Variables */
+:root {
+  --bg: #fff;
+  --text: #000;
+  --secondary: #555;
+  --outline: #e0e0e0;
+  --accent: #007bff;
+}
+
+/* Resets */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+.container {
+  margin: 0 6rem;
+  padding: 2rem;
+}
+
+/* Header & Navigation */
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+nav ul {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  list-style: none;
+  margin-top: 1rem;
+}
+
+nav a {
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 600;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+/* Hero */
+.hero {
+  background: var(--accent);
+  color: #fff;
+  padding: 3rem 1rem;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.hero h2 {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.hero p {
+  font-size: 1.25rem;
+}
+
+/* Grid & Cards */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.card {
+  background: var(--bg);
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.card h3 {
+  margin-bottom: 0.75rem;
+}
+
+.card p {
+  color: var(--secondary);
+}
+
+/* Tasks Grid & Cards */
+.tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1rem;
+}
+
+.task-card {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.task-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.status-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--outline);
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0.5rem 0;
+}
+
+.status-fill {
+  height: 100%;
+  background: #66bb6a;
+  width: 0;
+  transition: width 0.3s ease;
+}
+
+.status-fill.in-progress {
+  background: darkorange;
+}
+
+.filters-toggle {
+  margin-bottom: 1rem;
+}
+
+/* Task Card Typography */
+.task-title {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.job-id {
+  margin-top: auto;
+  font-size: 0.75rem;
+  color: var(--secondary);
+  text-align: right;
+}
+
+/* Buttons */
+button {
+  background: transparent;
+  border: 1px solid var(--outline);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+button:hover {
+  background: var(--outline);
+}
+
+/* Forms */
+input[type="text"],
+input[type="number"],
+input[type="datetime-local"],
+select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--outline);
+  border-radius: 4px;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 1px solid var(--outline);
+  color: var(--secondary);
+}
+
+th {
+  font-weight: 600;
+  color: var(--text);
+}
+
+tr:hover {
+  background: #f9f9f9;
+}
+
+/* Stats Section */
+.stats-section {
+  margin-top: 2rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.stat-card {
+  background: var(--bg);
+  border: 1px solid var(--outline);
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.stat-card h3 {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.stat-card p {
+  font-size: 1.5rem;
+  color: var(--accent);
+  margin: 0;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  margin-top: 3rem;
+  font-size: 0.875rem;
+  color: var(--secondary);
+}

@@ -23,6 +23,7 @@ export default function Task() {
   const [jobsList, setJobsList] = useState([]);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -108,7 +109,7 @@ export default function Task() {
   }, []);
 
   return (
-    <div style={{ maxWidth: '600px', margin: '1rem auto' }}>
+    <div className="container">
       <div
         style={{
           border: '2px solid #1890ff',
@@ -197,66 +198,72 @@ export default function Task() {
           </form>
         )}
       </div>
-      <div style={{ marginTop: '2rem' }}>
+      <div className="stats-section">
         <h2>Task Statistics</h2>
         {statsLoading ? (
           <p>Loading statistics…</p>
         ) : statsError ? (
           <p>Error: {statsError}</p>
         ) : taskStats ? (
-          <ul>
-            <li>Completed Jobs: {taskStats.completed_jobs}</li>
-            <li>Completed Tasks: {taskStats.completed_tasks}</li>
-          </ul>
+          <div className="stats-grid">
+            <div className="stat-card">
+              <h3>Completed Jobs</h3>
+              <p>{taskStats.completed_jobs}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Completed Tasks</h3>
+              <p>{taskStats.completed_tasks}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Total Pixels</h3>
+              <p>{taskStats.total_pixels}</p>
+            </div>
+          </div>
         ) : null}
       </div>
       <div style={{ marginTop: '2rem' }}>
         <h2>All Jobs</h2>
-        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <input type="datetime-local" value={filterMinDate} onChange={e => setFilterMinDate(e.target.value)} />
-          <input type="datetime-local" value={filterMaxDate} onChange={e => setFilterMaxDate(e.target.value)} />
-          <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-            <option value="">All Statuses</option>
-            <option value="COMPLETED">COMPLETED</option>
-            <option value="TASKS-ASSIGNED">TASKS-ASSIGNED</option>
-            <option value="AVAILABLE">AVAILABLE</option>
-          </select>
-          <input placeholder="Client ID" type="text" value={filterClientIdSelect} onChange={e => setFilterClientIdSelect(e.target.value)} />
-          <input placeholder="Job ID" type="text" value={filterJobId} onChange={e => setFilterJobId(e.target.value)} />
-          <button onClick={handleFetchJobs} disabled={jobsLoading}>{jobsLoading ? 'Loading...' : 'Fetch Jobs'}</button>
-        </div>
+        <button className="filters-toggle" onClick={() => setShowFilters(!showFilters)}>
+          {showFilters ? 'Hide Filters' : 'Show Filters'}
+        </button>
+        {showFilters && (
+          <div className="filters-panel" style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <input type="datetime-local" value={filterMinDate} onChange={e => setFilterMinDate(e.target.value)} />
+            <input type="datetime-local" value={filterMaxDate} onChange={e => setFilterMaxDate(e.target.value)} />
+            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+              <option value="">All Statuses</option>
+              <option value="COMPLETED">COMPLETED</option>
+              <option value="TASKS-ASSIGNED">TASKS-ASSIGNED</option>
+              <option value="AVAILABLE">AVAILABLE</option>
+            </select>
+            <input placeholder="Client ID" type="text" value={filterClientIdSelect} onChange={e => setFilterClientIdSelect(e.target.value)} />
+            <input placeholder="Job ID" type="text" value={filterJobId} onChange={e => setFilterJobId(e.target.value)} />
+            <button onClick={handleFetchJobs} disabled={jobsLoading}>{jobsLoading ? 'Loading...' : 'Fetch Jobs'}</button>
+          </div>
+        )}
         {jobsError && <p style={{ color: 'red' }}>Error: {jobsError}</p>}
         {jobsLoading ? (
           <p>Loading jobs…</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Job ID</th>
-                <th>Client ID</th>
-                <th>Description</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th># Tasks</th>
-                <th>Created At</th>
-                <th>Completed At</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobsList.map(job => (
-                <tr key={job.job_id}>
-                  <td>{job.job_id}</td>
-                  <td>{job.client_id}</td>
-                  <td>{job.job_description}</td>
-                  <td>{job.priority}</td>
-                  <td>{job.status}</td>
-                  <td>{job.num_tasks}</td>
-                  <td>{new Date(job.created_at.$date).toLocaleString()}</td>
-                  <td>{job.completed_at ? new Date(job.completed_at).toLocaleString() : '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <div className="tasks-grid">
+            {jobsList.map(job => {
+              const totalTasks = job.num_tasks;
+              const completed = Object.values(job.task_statuses || {}).filter(s => s === 'COMPLETED').length;
+              const pct = totalTasks ? (completed / totalTasks) * 100 : 0;
+              const statusClass = job.status.toLowerCase();
+              return (
+                <div key={job.job_id} className="task-card">
+                  <h3 className="task-title">{job.client_id}</h3>
+                  {job.job_description && <p><strong>Description:</strong> {job.job_description}</p>}
+                  <div className="status-bar">
+                    <div className={`status-fill ${pct < 100 ? 'in-progress' : ''}`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <p>{completed} of {totalTasks} tasks completed ({Math.round(pct)}%)</p>
+                  <p className="job-id">ID: {job.job_id}</p>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
       {submitError && <div style={{ color: 'red', marginTop: '1rem' }}>Error: {submitError}</div>}
