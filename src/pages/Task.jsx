@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import _ from 'lodash'; // Assuming lodash is installed for debounce
 
 export default function Task() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -24,6 +25,9 @@ export default function Task() {
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
+  const canvasRef = useRef(null);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -47,7 +51,6 @@ export default function Task() {
             x_resolution: Number(resolution.x_resolution),
             y_resolution: Number(resolution.y_resolution)
           },
-          // ⚠️ ADDED: send along the chosen palette
           color
         }
       };
@@ -91,6 +94,57 @@ export default function Task() {
     }
   };
 
+  const computeMandelbrot = (region, palette, width, height, maxIterations = 100) => {
+    const { x_min, x_max, y_min, y_max } = region;
+    const dx = (x_max - x_min) / width;
+    const dy = (y_max - y_min) / height;
+    const imageData = new Uint8ClampedArray(width * height * 4);
+    for (let px = 0; px < width; px++) {
+      for (let py = 0; py < height; py++) {
+        const x0 = x_min + px * dx;
+        const y0 = y_min + py * dy;
+        let x = 0;
+        let y = 0;
+        let iteration = 0;
+        while (x * x + y * y <= 4 && iteration < maxIterations) {
+          const xTemp = x * x - y * y + x0;
+          y = 2 * x * y + y0;
+          x = xTemp;
+          iteration++;
+        }
+        const color = getColor(iteration, maxIterations, palette);
+        const index = (py * width + px) * 4;
+        imageData[index] = color.r;
+        imageData[index + 1] = color.g;
+        imageData[index + 2] = color.b;
+        imageData[index + 3] = 255;
+      }
+    }
+    return new ImageData(imageData, width, height);
+  };
+
+  const getColor = (iteration, maxIterations, palette) => {
+    if (iteration === maxIterations) {
+      return { r: 0, g: 0, b: 0 };
+    }
+    const t = iteration / maxIterations;
+    let r, g, b;
+    switch (palette) {
+      case 'simple_rgb':
+        r = Math.floor(255 * t);
+        g = 0;
+        b = Math.floor(255 * (1 - t));
+        break;
+      case 'classic_mono':
+        r = g = b = Math.floor(255 * t);
+        break;
+      // Add more palette implementations as needed
+      default:
+        r = g = b = Math.floor(255 * t);
+    }
+    return { r, g, b };
+  };
+
   useEffect(() => {
     const fetchTaskStats = async () => {
       try {
@@ -108,94 +162,127 @@ export default function Task() {
     handleFetchJobs();
   }, []);
 
+  useEffect(() => {
+    if (!isExpanded) return;
+    const generatePreview = () => {
+      if (!canvasRef.current) return;
+      setIsPreviewLoading(true);
+      const canvas = canvasRef.current;
+      const previewSize = 200;
+      const aspectRatio = resolution.y_resolution / resolution.x_resolution;
+      let canvasWidth, canvasHeight;
+      if (resolution.x_resolution > resolution.y_resolution) {
+        canvasWidth = previewSize;
+        canvasHeight = previewSize * aspectRatio;
+      } else {
+        canvasHeight = previewSize;
+        canvasWidth = previewSize / aspectRatio;
+      }
+      canvas.width = Math.round(canvasWidth);
+      canvas.height = Math.round(canvasHeight);
+      const ctx = canvas.getContext('2d');
+      const imageData = computeMandelbrot(region, color, canvas.width, canvas.height);
+      ctx.putImageData(imageData, 0, 0);
+      setIsPreviewLoading(false);
+    };
+    const debouncedGenerate = _.debounce(generatePreview, 500);
+    debouncedGenerate();
+    return () => debouncedGenerate.cancel();
+  }, [isExpanded, region, resolution, color]);
+
   return (
     <div className="container">
-      <div
-        style={{
-          border: '2px solid #1890ff',
-          backgroundColor: '#e6f7ff',
-          padding: '1rem',
-          borderRadius: '4px'
-        }}
-      >
-        <p>
+      <div className="task-banner">
+        <p className="banner-text">
           Want to try it out now?{' '}
-          <button onClick={() => setIsExpanded(!isExpanded)}>
-            {isExpanded ? 'Collapse' : 'Generate now'}
+          <button className="generate-button" onClick={() => setIsExpanded(!isExpanded)}>
+            {isExpanded ? 'Collapse' : 'Generate Now'}
           </button>
         </p>
         {isExpanded && (
-          <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '0.5rem' }}>
-            <label>
-              Client ID:
-              <input type="text" value={clientId} onChange={e => setClientId(e.target.value)} required />
-            </label>
-            <label>
-              Job Description:
-              <input type="text" value={jobDescription} onChange={e => setJobDescription(e.target.value)} />
-            </label>
-            <label>
-              Priority:
-              <select value={priority} onChange={e => setPriority(e.target.value)}>
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
-              </label>
-
-              {/* ⚠️ ADDED: color-palette selector */}
+          <div className="form-container">
+            <div className="form-grid">
               <label>
-              Color:
-              <select value={color} onChange={e => setColor(e.target.value)}>
-                <option value="simple_rgb">RGB</option>
-                <option value="classic_mono">Classic Mono</option>
-                <option value="escape_time_spectrum">Escape Time Spectrum</option>
-                <option value="inferno_depth">Inferno Depth</option>
-                <option value="deep_ocean">Deep Ocean</option>
-                <option value="galactic">Galactic</option>
-                <option value="fractal_forest">Fractal Forest</option>
-              </select>
+                Client ID:
+                <input type="text" value={clientId} onChange={e => setClientId(e.target.value)} required />
               </label>
-            <label>
-              Number of Tasks:
-              <input type="number" value={numTasks} min={1} onChange={e => setNumTasks(e.target.value)} />
-            </label>
-            <fieldset style={{ border: '1px solid #ddd', padding: '0.5rem' }}>
+              <label>
+                Job Description:
+                <input type="text" value={jobDescription} onChange={e => setJobDescription(e.target.value)} />
+              </label>
+              <label>
+                Priority:
+                <select value={priority} onChange={e => setPriority(e.target.value)}>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </label>
+              <label>
+                Color:
+                <select value={color} onChange={e => setColor(e.target.value)}>
+                  <option value="simple_rgb">RGB</option>
+                  <option value="classic_mono">Classic Mono</option>
+                  <option value="escape_time_spectrum">Escape Time Spectrum</option>
+                  <option value="inferno_depth">Inferno Depth</option>
+                  <option value="deep_ocean">Deep Ocean</option>
+                  <option value="galactic">Galactic</option>
+                  <option value="fractal_forest">Fractal Forest</option>
+                </select>
+              </label>
+              <label>
+                Number of Tasks:
+                <input type="number" value={numTasks} min={1} onChange={e => setNumTasks(e.target.value)} />
+              </label>
+            </div>
+            <fieldset className="region-fieldset">
               <legend>Region</legend>
-              <label>
-                x_min:
-                <input type="number" step="0.01" value={region.x_min} onChange={e => setRegion({ ...region, x_min: e.target.value })} />
-              </label>
-              <label>
-                x_max:
-                <input type="number" step="0.01" value={region.x_max} onChange={e => setRegion({ ...region, x_max: e.target.value })} />
-              </label>
-              <label>
-                y_min:
-                <input type="number" step="0.01" value={region.y_min} onChange={e => setRegion({ ...region, y_min: e.target.value })} />
-              </label>
-              <label>
-                y_max:
-                <input type="number" step="0.01" value={region.y_max} onChange={e => setRegion({ ...region, y_max: e.target.value })} />
-              </label>
+              <div className="form-grid">
+                <label>
+                  x_min:
+                  <input type="number" step="0.01" value={region.x_min} onChange={e => setRegion({ ...region, x_min: e.target.value })} />
+                </label>
+                <label>
+                  x_max:
+                  <input type="number" step="0.01" value={region.x_max} onChange={e => setRegion({ ...region, x_max: e.target.value })} />
+                </label>
+                <label>
+                  y_min:
+                  <input type="number" step="0.01" value={region.y_min} onChange={e => setRegion({ ...region, y_min: e.target.value })} />
+                </label>
+                <label>
+                  y_max:
+                  <input type="number" step="0.01" value={region.y_max} onChange={e => setRegion({ ...region, y_max: e.target.value })} />
+                </label>
+              </div>
             </fieldset>
-            <fieldset style={{ border: '1px solid #ddd', padding: '0.5rem' }}>
+            <fieldset className="resolution-fieldset">
               <legend>Resolution</legend>
-              <label>
-                x_resolution:
-                <input type="number" value={resolution.x_resolution} onChange={e => setResolution({ ...resolution, x_resolution: e.target.value })} />
-              </label>
-              <label>
-                y_resolution:
-                <input type="number" value={resolution.y_resolution} onChange={e => setResolution({ ...resolution, y_resolution: e.target.value })} />
-              </label>
+              <div className="form-grid">
+                <label>
+                  x_resolution:
+                  <input type="number" value={resolution.x_resolution} onChange={e => setResolution({ ...resolution, x_resolution: e.target.value })} />
+                </label>
+                <label>
+                  y_resolution:
+                  <input type="number" value={resolution.y_resolution} onChange={e => setResolution({ ...resolution, y_resolution: e.target.value })} />
+                </label>
+              </div>
             </fieldset>
-            <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
-              <button type="submit" disabled={submitting || !clientId}>
+            <div className="submit-section">
+              <button className="submit-button" onClick={handleSubmit} disabled={submitting || !clientId}>
                 {submitting ? 'Submitting...' : 'Submit Job'}
               </button>
             </div>
-          </form>
+            <div className="preview-section">
+              <h3>Low Resolution Preview</h3>
+              {isPreviewLoading && <p className="preview-loading">Generating preview...</p>}
+              <canvas ref={canvasRef} className="preview-canvas" />
+              <p className="preview-note">
+                This is a low-resolution preview. The final image will be at {resolution.x_resolution}x{resolution.y_resolution} pixels.
+              </p>
+            </div>
+          </div>
         )}
       </div>
       <div className="stats-section">
@@ -208,20 +295,20 @@ export default function Task() {
           <div className="stats-grid">
             <div className="stat-card">
               <h3>Completed Jobs</h3>
-              <p>{taskStats.completed_jobs}</p>
+              <p>{taskStats.completed_jobs.toLocaleString()}</p>
             </div>
             <div className="stat-card">
               <h3>Completed Tasks</h3>
-              <p>{taskStats.completed_tasks}</p>
+              <p>{taskStats.completed_tasks.toLocaleString()}</p>
             </div>
             <div className="stat-card">
               <h3>Total Pixels</h3>
-              <p>{taskStats.total_pixels}</p>
+              <p>{taskStats.total_pixels.toLocaleString()}</p>
             </div>
           </div>
         ) : null}
       </div>
-      <div style={{ marginTop: '2rem' }}>
+      <div className="jobs-section">
         <h2>All Jobs</h2>
         <button className="filters-toggle" onClick={() => setShowFilters(!showFilters)}>
           {showFilters ? 'Hide Filters' : 'Show Filters'}
@@ -250,7 +337,6 @@ export default function Task() {
               const totalTasks = job.num_tasks;
               const completed = Object.values(job.task_statuses || {}).filter(s => s === 'COMPLETED').length;
               const pct = totalTasks ? (completed / totalTasks) * 100 : 0;
-              const statusClass = job.status.toLowerCase();
               return (
                 <div key={job.job_id} className="task-card">
                   <h3 className="task-title">{job.client_id}</h3>
@@ -258,7 +344,9 @@ export default function Task() {
                   <div className="status-bar">
                     <div className={`status-fill ${pct < 100 ? 'in-progress' : ''}`} style={{ width: `${pct}%` }} />
                   </div>
-                  <p>{completed} of {totalTasks} tasks completed ({Math.round(pct)}%)</p>
+                  <p>
+                    {completed.toLocaleString()} of {totalTasks.toLocaleString()} tasks completed ({Math.round(pct)}%)
+                  </p>
                   <p className="job-id">ID: {job.job_id}</p>
                 </div>
               );

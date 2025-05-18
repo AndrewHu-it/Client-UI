@@ -162,6 +162,49 @@ nav a:hover {
   text-align: right;
 }
 
+/* Task Banner */
+.task-banner {
+  background: var(--bg);
+  border: 1px solid var(--outline);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  margin-top: 2rem;
+}
+
+.task-banner .banner-text {
+  font-size: 1rem;
+  color: var(--text);
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.generate-button {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 0.5rem;
+  transition: background 0.2s;
+}
+
+.generate-button:hover {
+  background: #0056b3;
+}
+
+.task-banner-preview {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.task-banner-preview canvas {
+  border: 1px solid var(--outline);
+  border-radius: 4px;
+}
+
 /* Buttons */
 button {
   background: transparent;

@@ -1,21 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 export default function TaskBanner() {
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const handleClick = () => {
-    setIsExpanded(!isExpanded);
-  };
-
   return (
-    <div className={`task-banner ${isExpanded ? 'expanded' : 'collapsed'}`}>
-      <p>
+    <div className="task-banner">
+      <p className="banner-text">
         Want to try it out now?{' '}
-        <button className="generate-button" onClick={handleClick}>
-          Generate now
+        <button className="generate-button">
+          Generate Now
         </button>
       </p>
-      {isExpanded && <div>Expanded content here</div>}
     </div>
   );
 }
