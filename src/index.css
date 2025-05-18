@@ -101,7 +101,7 @@ nav a:hover {
   color: #fff;
   background: #444;
   padding: 1rem 1.5rem;
-  border-radius: 20x;
+  border-radius: 0.5rem;
   text-decoration: none;
   transition: background 0.2s;
 }
@@ -657,8 +657,8 @@ footer {
 }
 
 .hero-content {
-  max-width: 800px;
-  margin: 0 auto 3rem;
+  max-width: none;
+  margin: 0 0 3rem;
   font-size: 1rem;
   line-height: 1.6;
 }
@@ -669,4 +669,52 @@ footer {
 
 .hero-content ul li {
   margin-bottom: 0.5rem;
+}
+
+/* Challenge section on About page */
+.challenge-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+  margin: 2rem 0;
+}
+
+.challenge-text .challenge-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1rem;
+}
+
+.challenge-list {
+  list-style: disc;
+  margin-left: 1.5rem;
+  color: var(--secondary);
+  font-size: 1.125rem;
+}
+
+.challenge-media {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.challenge-caption {
+  text-align: center;
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  color: var(--secondary);
+}
+
+/* Override container for About page to use full width minus 1in margins */
+.about-page.container {
+  margin-left: 1in;
+  margin-right: 1in;
+  padding-left: 0;
+  padding-right: 0;
 }
