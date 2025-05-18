@@ -19,6 +19,9 @@ export default function Node() {
   const [error, setError] = useState(null);
   const [growthData, setGrowthData] = useState(null);
   const [allNodes, setAllNodes] = useState(null);
+  const [expandedNodeId, setExpandedNodeId] = useState(null); // ⚠️ added: which node is expanded
+  const [hoveredNodeId, setHoveredNodeId]     = useState(null); // ⚠️ added: which row is hovered
+
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -90,15 +93,31 @@ export default function Node() {
     ]
   };
 
+  // Enhanced chart options
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { position: 'top', labels: { color: '#333', font: { size: 14 } } },
+      title: { display: true, text: '', color: '#333', font: { size: 18 } }
+    },
+    scales: {
+      x: { ticks: { color: '#666' }, grid: { color: '#eee' } },
+      y: { beginAtZero: true, ticks: { color: '#666' }, grid: { color: '#eee' } }
+    }
+  };
+
   const nodesArray = allNodes
     ? Object.values(allNodes).filter(item => item && typeof item === 'object' && 'node_id' in item)
     : [];
   const sortedNodes = [...nodesArray].sort((a, b) => b.tasks_completed - a.tasks_completed);
+  const medals = ['🥇','🥈','🥉'];
+  const medalsMap = sortedNodes.slice(0,3).reduce((acc, n, i) => (acc[n.node_id] = medals[i], acc), {});
   const [searchNodeId, setSearchNodeId] = useState('');
   const [searchData, setSearchData] = useState(null);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState(null);
   const displayedNodes = searchData ? [searchData] : sortedNodes;
+
   const handleSearch = async () => {
     setSearchLoading(true);
     setSearchError(null);
@@ -121,24 +140,19 @@ export default function Node() {
   if (error) return <p>Error: {error}</p>;
 
   return (
-    <div className="container">
-      <h1>Node Summary Statistics</h1>
-      <ul>
-        <li>Total Nodes: {stats.num_nodes}</li>
-        <li>Active Nodes: {stats.num_active_nodes}</li>
-        <li>Estimated Compute (TFLOPs): {stats.estimated_compute_value_TFLOPs}</li>
-      </ul>
+    
+    <div className="container node-page">
+      <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Node Statistics</h2>
+      {/* Summary stats cards */}
+      <div className="stats-cards">
+        <div className="stats-card"><h3>Total Nodes</h3><p>{stats.num_nodes}</p></div>
+        <div className="stats-card"><h3>Active Nodes</h3><p>{stats.num_active_nodes}</p></div>
+        <div className="stats-card"><h3>Estimated TFLOPS</h3><p>{stats.estimated_compute_value_TFLOPs}</p></div>
+      </div>
       {growthData && (
-        <div>
+        <div className="chart-card">
           <h2>Node Growth Over Time</h2>
-          {growthData.message ? (
-            <p>{growthData.message}</p>
-          ) : (
-            <Line
-              data={chartData}
-              options={{ responsive: true, scales: { y: { beginAtZero: true } } }}
-            />
-          )}
+          {growthData.message ? <p>{growthData.message}</p> : <Line data={chartData} options={chartOptions} />}
         </div>
       )}
       {allNodes && (
@@ -162,34 +176,42 @@ export default function Node() {
             </button>
           </div>
           {searchError && <div style={{ color: 'red' }}>Error: {searchError}</div>}
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Joined</th>
-                <th>Status</th>
-                <th>Tasks Completed</th>
-                <th>Cores</th>
-                <th>CPU</th>
-                <th>GPU</th>
-                <th>RAM</th>
-              </tr>
-            </thead>
-            <tbody>
-              {displayedNodes.map(node => (
-                <tr key={node.node_id}>
-                  <td>{node.name}</td>
-                  <td>{new Date(node.date_joined.$date).toLocaleString()}</td>
-                  <td>{node.available ? 'Active' : 'Inactive'}</td>
-                  <td>{node.tasks_completed}</td>
-                  <td>{node.computer_specs?.cores}</td>
-                  <td>{node.computer_specs?.cpu}</td>
-                  <td>{node.computer_specs?.gpu}</td>
-                  <td>{node.computer_specs?.ram}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Nodes grid with inline detail expansion */}
+          <div className="nodes-grid">
+            {displayedNodes.map(node => (
+              <React.Fragment key={node.node_id}>
+                <div className="node-wrapper">
+                  <div className="node-card" onClick={() => setExpandedNodeId(expandedNodeId === node.node_id ? null : node.node_id)}>
+                    <div className="node-title">
+                      {node.name}
+                      {medalsMap[node.node_id] && <span className="medal">{medalsMap[node.node_id]}</span>}
+                    </div>
+                    <div className="node-joined">Joined: {new Date(node.date_joined.$date).toLocaleDateString()}</div>
+                    <div className="node-summary">
+                      <span className={`status-dot ${node.available ? 'active' : 'inactive'}`}></span>
+                      {node.tasks_completed} tasks completed
+                    </div>
+                  </div>
+                </div>
+                {expandedNodeId === node.node_id && (
+                  <div className="detail-panel">
+                    <h3>{node.name} Details</h3>
+                    <p><strong>Node ID:</strong> {node.node_id}</p>
+                    <p><strong>Joined:</strong> {new Date(node.date_joined.$date).toLocaleDateString()}</p>
+                    <p><strong>Status:</strong> {node.available ? 'Active' : 'Inactive'}</p>
+                    <p><strong>Tasks Completed:</strong> {node.tasks_completed}</p>
+                    <div className="node-specs-grid">
+                      <div><strong>Cores:</strong> {node.computer_specs?.cores}</div>
+                      <div><strong>CPU:</strong> {node.computer_specs?.cpu}</div>
+                      <div><strong>GPU:</strong> {node.computer_specs?.gpu}</div>
+                      <div><strong>RAM:</strong> {node.computer_specs?.ram}</div>
+                    </div>
+                    <button className="close-details" onClick={() => setExpandedNodeId(null)}>Close</button>
+                  </div>
+                )}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
       )}
     </div>

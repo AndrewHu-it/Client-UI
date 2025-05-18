@@ -7,7 +7,7 @@ export default function Task() {
   const [jobDescription, setJobDescription] = useState('');
   const [priority, setPriority] = useState('low');
   const [numTasks, setNumTasks] = useState(16);
-  const [region, setRegion] = useState({ x_min: -2.0, x_max: 1.0, y_min: -1.5, y_max: 1.5 });
+  const [region, setRegion] = useState({ x_min: '-2.0', x_max: '1.0', y_min: '-1.5', y_max: '1.5' });
   const [resolution, setResolution] = useState({ x_resolution: 3840, y_resolution: 2160 });
   const [color, setColor] = useState('simple_rgb');
   const [responseData, setResponseData] = useState(null);
@@ -95,7 +95,10 @@ export default function Task() {
   };
 
   const computeMandelbrot = (region, palette, width, height, maxIterations = 100) => {
-    const { x_min, x_max, y_min, y_max } = region;
+    const x_min = parseFloat(region.x_min);
+    const x_max = parseFloat(region.x_max);
+    const y_min = parseFloat(region.y_min);
+    const y_max = parseFloat(region.y_max);
     const dx = (x_max - x_min) / width;
     const dy = (y_max - y_min) / height;
     const imageData = new Uint8ClampedArray(width * height * 4);
@@ -123,26 +126,64 @@ export default function Task() {
     return new ImageData(imageData, width, height);
   };
 
-  const getColor = (iteration, maxIterations, palette) => {
-    if (iteration === maxIterations) {
-      return { r: 0, g: 0, b: 0 };
-    }
-    const t = iteration / maxIterations;
+  // Convert HSB/HSV to RGB
+  function hsbToRgb(h, s, v) {
     let r, g, b;
-    switch (palette) {
-      case 'simple_rgb':
-        r = Math.floor(255 * t);
-        g = 0;
-        b = Math.floor(255 * (1 - t));
-        break;
-      case 'classic_mono':
-        r = g = b = Math.floor(255 * t);
-        break;
-      // Add more palette implementations as needed
-      default:
-        r = g = b = Math.floor(255 * t);
+    const i = Math.floor(h * 6);
+    const f = h * 6 - i;
+    const p = v * (1 - s);
+    const q = v * (1 - f * s);
+    const t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+      case 0: r = v; g = t; b = p; break;
+      case 1: r = q; g = v; b = p; break;
+      case 2: r = p; g = v; b = t; break;
+      case 3: r = p; g = q; b = v; break;
+      case 4: r = t; g = p; b = v; break;
+      case 5: r = v; g = p; b = q; break;
     }
-    return { r, g, b };
+    return { r: Math.floor(r * 255), g: Math.floor(g * 255), b: Math.floor(b * 255) };
+  }
+
+  const getColor = (iteration, maxIterations, palette) => {
+    // Black for points inside the set
+    if (iteration === maxIterations) return { r: 0, g: 0, b: 0 };
+    const t = iteration / maxIterations;
+    switch (palette) {
+      case 'simple_rgb': {
+        // RGB stripes
+        const i = iteration % 256;
+        return { r: (i * 5) % 256, g: (i * 7) % 256, b: (i * 11) % 256 };
+      }
+      case 'classic_mono': {
+        const v = iteration < maxIterations ? 255 : 0;
+        return { r: v, g: v, b: v };
+      }
+      case 'escape_time_spectrum': {
+        return hsbToRgb(t, 1, 1);
+      }
+      case 'inferno_depth': {
+        const rVal = Math.min(1, 2 * t);
+        const gVal = Math.min(1, 2 * (t - 0.5));
+        return { r: Math.floor(rVal * 255), g: Math.floor(Math.max(0, gVal) * 255), b: 0 };
+      }
+      case 'deep_ocean': {
+        return { r: 0, g: Math.floor(t * 255), b: 255 };
+      }
+      case 'galactic': {
+        const hue = 0.75 - 0.5 * t;
+        return hsbToRgb(hue, 0.7, 0.9);
+      }
+      case 'fractal_forest': {
+        const gVal = 0.5 + 0.5 * t;
+        return { r: 0, g: Math.floor(gVal * 255), b: 0 };
+      }
+      default: {
+        // Fallback to grayscale
+        const v = Math.floor(255 * t);
+        return { r: v, g: v, b: v };
+      }
+    }
   };
 
   useEffect(() => {
@@ -168,7 +209,7 @@ export default function Task() {
       if (!canvasRef.current) return;
       setIsPreviewLoading(true);
       const canvas = canvasRef.current;
-      const previewSize = 200;
+      const previewSize = 400;
       const aspectRatio = resolution.y_resolution / resolution.x_resolution;
       let canvasWidth, canvasHeight;
       if (resolution.x_resolution > resolution.y_resolution) {
@@ -192,102 +233,11 @@ export default function Task() {
 
   return (
     <div className="container">
-      <div className="task-banner">
-        <p className="banner-text">
-          Want to try it out now?{' '}
-          <button className="generate-button" onClick={() => setIsExpanded(!isExpanded)}>
-            {isExpanded ? 'Collapse' : 'Generate Now'}
-          </button>
-        </p>
-        {isExpanded && (
-          <div className="form-container">
-            <div className="form-grid">
-              <label>
-                Client ID:
-                <input type="text" value={clientId} onChange={e => setClientId(e.target.value)} required />
-              </label>
-              <label>
-                Job Description:
-                <input type="text" value={jobDescription} onChange={e => setJobDescription(e.target.value)} />
-              </label>
-              <label>
-                Priority:
-                <select value={priority} onChange={e => setPriority(e.target.value)}>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </label>
-              <label>
-                Color:
-                <select value={color} onChange={e => setColor(e.target.value)}>
-                  <option value="simple_rgb">RGB</option>
-                  <option value="classic_mono">Classic Mono</option>
-                  <option value="escape_time_spectrum">Escape Time Spectrum</option>
-                  <option value="inferno_depth">Inferno Depth</option>
-                  <option value="deep_ocean">Deep Ocean</option>
-                  <option value="galactic">Galactic</option>
-                  <option value="fractal_forest">Fractal Forest</option>
-                </select>
-              </label>
-              <label>
-                Number of Tasks:
-                <input type="number" value={numTasks} min={1} onChange={e => setNumTasks(e.target.value)} />
-              </label>
-            </div>
-            <fieldset className="region-fieldset">
-              <legend>Region</legend>
-              <div className="form-grid">
-                <label>
-                  x_min:
-                  <input type="number" step="0.01" value={region.x_min} onChange={e => setRegion({ ...region, x_min: e.target.value })} />
-                </label>
-                <label>
-                  x_max:
-                  <input type="number" step="0.01" value={region.x_max} onChange={e => setRegion({ ...region, x_max: e.target.value })} />
-                </label>
-                <label>
-                  y_min:
-                  <input type="number" step="0.01" value={region.y_min} onChange={e => setRegion({ ...region, y_min: e.target.value })} />
-                </label>
-                <label>
-                  y_max:
-                  <input type="number" step="0.01" value={region.y_max} onChange={e => setRegion({ ...region, y_max: e.target.value })} />
-                </label>
-              </div>
-            </fieldset>
-            <fieldset className="resolution-fieldset">
-              <legend>Resolution</legend>
-              <div className="form-grid">
-                <label>
-                  x_resolution:
-                  <input type="number" value={resolution.x_resolution} onChange={e => setResolution({ ...resolution, x_resolution: e.target.value })} />
-                </label>
-                <label>
-                  y_resolution:
-                  <input type="number" value={resolution.y_resolution} onChange={e => setResolution({ ...resolution, y_resolution: e.target.value })} />
-                </label>
-              </div>
-            </fieldset>
-            <div className="submit-section">
-              <button className="submit-button" onClick={handleSubmit} disabled={submitting || !clientId}>
-                {submitting ? 'Submitting...' : 'Submit Job'}
-              </button>
-            </div>
-            <div className="preview-section">
-              <h3>Low Resolution Preview</h3>
-              {isPreviewLoading && <p className="preview-loading">Generating preview...</p>}
-              <canvas ref={canvasRef} className="preview-canvas" />
-              <p className="preview-note">
-                This is a low-resolution preview. The final image will be at {resolution.x_resolution}x{resolution.y_resolution} pixels.
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
+
+
       <div className="stats-section">
-        <h2>Task Statistics</h2>
-        {statsLoading ? (
+      <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Use Statistics</h2> {/* ⚠️ CHANGED: made text larger and bolder */}
+      {statsLoading ? (
           <p>Loading statistics…</p>
         ) : statsError ? (
           <p>Error: {statsError}</p>
@@ -308,6 +258,61 @@ export default function Task() {
           </div>
         ) : null}
       </div>
+
+      <div
+        className="jobs-section"
+        style={{ marginTop: '3rem' }}
+      ></div>
+    
+
+
+
+      <div className="task-banner light-blue-banner">
+        <p className="banner-text">
+          Want to try it out?{' '}
+          <button className="generate-button" onClick={() => setIsExpanded(!isExpanded)}>
+            {isExpanded ? 'Collapse' : 'Generate Now'}
+          </button>
+        </p>
+        {isExpanded && (
+          <div className="expanded-content">
+            <div className="form-section">
+              <div className="form-grid">
+                <label>Client ID: <input type="text" value={clientId} onChange={e => setClientId(e.target.value)} required /></label>
+                <label>Job Description: <input type="text" value={jobDescription} onChange={e => setJobDescription(e.target.value)} required /></label>
+                <label>Priority: <select value={priority} onChange={e => setPriority(e.target.value)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
+                <label>Color: <select value={color} onChange={e => setColor(e.target.value)}><option value="simple_rgb">RGB</option><option value="classic_mono">Classic Mono</option><option value="escape_time_spectrum">Escape Time Spectrum</option><option value="inferno_depth">Inferno Depth</option><option value="deep_ocean">Deep Ocean</option><option value="galactic">Galactic</option><option value="fractal_forest">Fractal Forest</option></select></label>
+                <label>Number of Tasks: <input type="number" min={1} step={1} value={numTasks} onChange={e => setNumTasks(parseInt(e.target.value, 10))} /></label>
+              </div>
+              <fieldset className="region-fieldset">
+                <legend>Region</legend>
+                <div className="form-grid">
+                  <label>x_min: <input type="number" step="0.01" value={region.x_min} onChange={e => setRegion({ ...region, x_min: e.target.value })} /></label>
+                  <label>x_max: <input type="number" step="0.01" value={region.x_max} onChange={e => setRegion({ ...region, x_max: e.target.value })} /></label>
+                  <label>y_min: <input type="number" step="0.01" value={region.y_min} onChange={e => setRegion({ ...region, y_min: e.target.value })} /></label>
+                  <label>y_max: <input type="number" step="0.01" value={region.y_max} onChange={e => setRegion({ ...region, y_max: e.target.value })} /></label>
+                </div>
+              </fieldset>
+              <fieldset className="resolution-fieldset">
+                <legend>Resolution</legend>
+                <div className="form-grid">
+                  <label>x_resolution: <input type="number" step={1} value={resolution.x_resolution} onChange={e => setResolution({ ...resolution, x_resolution: parseInt(e.target.value, 10) })} /></label>
+                  <label>y_resolution: <input type="number" step={1} value={resolution.y_resolution} onChange={e => setResolution({ ...resolution, y_resolution: parseInt(e.target.value, 10) })} /></label>
+                </div>
+              </fieldset>
+            </div>
+            <div className="preview-section">
+              <h3>Low Resolution Preview</h3>
+              {isPreviewLoading ? <p className="preview-loading">Generating preview...</p> : <canvas ref={canvasRef} className="preview-canvas" />}
+              <p className="preview-note">This is a low-resolution preview. The final image will be at {resolution.x_resolution}x{resolution.y_resolution} pixels.</p>
+            </div>
+            <div className="submit-section">
+              <button className="submit-button" onClick={handleSubmit} disabled={submitting || !clientId || !jobDescription}>{submitting ? 'Submitting...' : 'Submit Job'}</button>
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="jobs-section">
         <h2>All Jobs</h2>
         <button className="filters-toggle" onClick={() => setShowFilters(!showFilters)}>
