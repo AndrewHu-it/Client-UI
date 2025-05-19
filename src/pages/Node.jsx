@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -21,50 +21,42 @@ export default function Node() {
   const [allNodes, setAllNodes] = useState(null);
   const [expandedNodeId, setExpandedNodeId] = useState(null); // ⚠️ added: which node is expanded
   const [hoveredNodeId, setHoveredNodeId]     = useState(null); // ⚠️ added: which row is hovered
+  const isFirstLoad = useRef(true);
 
-
+  // Poll stats, growth, and nodes every 10 seconds without UI flicker
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
+      const initial = isFirstLoad.current;
+      if (initial) {
+        setLoading(true);
+        setError(null);
+      }
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/client/summary-statistics`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setStats(data);
+        const [resStats, resGrowth, resNodes] = await Promise.all([
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/client/summary-statistics`),
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/client/node-growth`),
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/client/all-nodes`),
+        ]);
+        if (!resStats.ok) throw new Error(`Stats HTTP ${resStats.status}`);
+        if (!resGrowth.ok) throw new Error(`Growth HTTP ${resGrowth.status}`);
+        if (!resNodes.ok) throw new Error(`Nodes HTTP ${resNodes.status}`);
+        const statsData = await resStats.json();
+        const growth = await resGrowth.json();
+        const nodes = await resNodes.json();
+        setStats(statsData);
+        setGrowthData(growth);
+        setAllNodes(nodes);
       } catch (e) {
-        setError(e.message);
+        if (initial) setError(e.message);
+        else console.error(e);
       } finally {
-        setLoading(false);
+        if (initial) setLoading(false);
+        isFirstLoad.current = false;
       }
     };
-    fetchStats();
-  }, []);
-
-  useEffect(() => {
-    const fetchGrowth = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/client/node-growth`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setGrowthData(data);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchGrowth();
-  }, []);
-
-  useEffect(() => {
-    const fetchAllNodes = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/client/all-nodes`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setAllNodes(data);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-    fetchAllNodes();
+    fetchData();
+    const intervalId = setInterval(fetchData, 10000);
+    return () => clearInterval(intervalId);
   }, []);
 
   // Prepare data for line chart safely
@@ -144,11 +136,22 @@ export default function Node() {
     <div className="container node-page">
       <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Node Statistics</h2>
       {/* Summary stats cards */}
-      <div className="stats-cards">
-        <div className="stats-card"><h3>Total Nodes</h3><p>{stats.num_nodes}</p></div>
-        <div className="stats-card"><h3>Active Nodes</h3><p>{stats.num_active_nodes}</p></div>
-        <div className="stats-card"><h3>Estimated TFLOPS</h3><p>{stats.estimated_compute_value_TFLOPs}</p></div>
-      </div>
+      
+<div className="stats-grid"> {/* ⚠️ CHANGED: match Task’s grid container */}
+  <div className="stat-card">
+    <h3>Total Nodes</h3>
+    <p>{stats.num_nodes.toLocaleString()}</p> {/* ⚠️ CHANGED: formatted with commas */}
+  </div>
+  <div className="stat-card">
+    <h3>Active Nodes</h3>
+    <p>{stats.num_active_nodes.toLocaleString()}</p> {/* ⚠️ CHANGED: formatted with commas */}
+  </div>
+  <div className="stat-card">
+    <h3>Estimated TFLOPS</h3>
+    <p>{stats.estimated_compute_value_TFLOPs.toLocaleString()}</p> {/* ⚠️ CHANGED: formatted with commas */}
+  </div>
+</div>
+
       {growthData && (
         <div className="chart-card">
           <h2>Node Growth Over Time</h2>

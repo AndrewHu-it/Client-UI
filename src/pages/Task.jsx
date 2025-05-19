@@ -9,6 +9,7 @@ export default function Task() {
   const [numTasks, setNumTasks] = useState(16);
   const [region, setRegion] = useState({ x_min: '-2.0', x_max: '1.0', y_min: '-1.5', y_max: '1.5' });
   const [resolution, setResolution] = useState({ x_resolution: 3840, y_resolution: 2160 });
+  const [autoAdjustPixelRatio, setAutoAdjustPixelRatio] = useState(true);
   const [color, setColor] = useState('simple_rgb');
   const [responseData, setResponseData] = useState(null);
   const [submitError, setSubmitError] = useState(null);
@@ -24,10 +25,13 @@ export default function Task() {
   const [jobsList, setJobsList] = useState([]);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState(null);
+  const [expandedJobId, setExpandedJobId] = useState(null);
+  const [downloadingJobId, setDownloadingJobId] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
 
   const canvasRef = useRef(null);
+  const isFirstLoad = useRef(true);
 
   const handleSubmit = async e => {
     e.preventDefault();
@@ -62,6 +66,8 @@ export default function Task() {
       if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
       const data = await res.json();
       setResponseData(data);
+      // Refresh jobs list to include newly created job
+      await handleFetchJobs();
     } catch (e) {
       setSubmitError(e.message);
     } finally {
@@ -86,11 +92,38 @@ export default function Task() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setJobsList(data.jobs || []);
+      // Sort jobs by creation date descending
+      let jobs = data.jobs || [];
+      if (jobs.length && jobs[0].created_at) {
+        jobs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      }
+      setJobsList(jobs);
     } catch (e) {
       setJobsError(e.message);
     } finally {
       setJobsLoading(false);
+    }
+  };
+
+  // Download completed job image
+  const handleDownloadJob = async jobId => {
+    setDownloadingJobId(jobId);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/client/completed-job/${jobId}`);
+      if (!res.ok) throw new Error(`Error ${res.status}: ${res.statusText}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${jobId}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Download failed', e);
+    } finally {
+      setDownloadingJobId(null);
     }
   };
 
@@ -186,22 +219,80 @@ export default function Task() {
     }
   };
 
+  const updateXResolution = e => {
+    const newX = parseInt(e.target.value, 10) || 0;
+    if (autoAdjustPixelRatio) {
+      const mathWidth = parseFloat(region.x_max) - parseFloat(region.x_min);
+      const mathHeight = parseFloat(region.y_max) - parseFloat(region.y_min);
+      const newY = Math.round(newX * mathHeight / mathWidth);
+      setResolution({ x_resolution: newX, y_resolution: newY });
+    } else {
+      setResolution({ ...resolution, x_resolution: newX });
+    }
+  };
+
+  const updateYResolution = e => {
+    const newY = parseInt(e.target.value, 10) || 0;
+    if (autoAdjustPixelRatio) {
+      const mathWidth = parseFloat(region.x_max) - parseFloat(region.x_min);
+      const mathHeight = parseFloat(region.y_max) - parseFloat(region.y_min);
+      const newX = Math.round(newY * mathWidth / mathHeight);
+      setResolution({ x_resolution: newX, y_resolution: newY });
+    } else {
+      setResolution({ ...resolution, y_resolution: newY });
+    }
+  };
+
+  // Poll stats and jobs every 10 seconds
   useEffect(() => {
-    const fetchTaskStats = async () => {
+    const fetchData = async () => {
+      const initial = isFirstLoad.current;
+      if (initial) {
+        setStatsLoading(true);
+        setStatsError(null);
+        setJobsLoading(true);
+        setJobsError(null);
+      }
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/client/job-statistics`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setTaskStats(data);
+        // Fetch task stats
+        const resStats = await fetch(`${import.meta.env.VITE_API_BASE_URL}/client/job-statistics`);
+        if (!resStats.ok) throw new Error(`HTTP ${resStats.status}`);
+        const dataStats = await resStats.json();
+        setTaskStats(dataStats);
       } catch (e) {
         setStatsError(e.message);
       } finally {
-        setStatsLoading(false);
+        if (initial) setStatsLoading(false);
       }
+      // Fetch jobs list with current filters
+      try {
+        const filters = {};
+        if (filterMinDate) filters.min_date = new Date(filterMinDate).toISOString();
+        if (filterMaxDate) filters.max_date = new Date(filterMaxDate).toISOString();
+        if (filterStatus) filters.status = filterStatus;
+        if (filterClientIdSelect) filters.client_id = filterClientIdSelect;
+        if (filterJobId) filters.job_id = filterJobId;
+        const resJobs = await fetch(`${import.meta.env.VITE_API_BASE_URL}/client/all-jobs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(filters),
+        });
+        if (!resJobs.ok) throw new Error(`HTTP ${resJobs.status}`);
+        const dataJobs = await resJobs.json();
+        let jobs = dataJobs.jobs || [];
+        if (jobs.length && jobs[0].created_at) jobs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        setJobsList(jobs);
+      } catch (e) {
+        setJobsError(e.message);
+      } finally {
+        if (initial) setJobsLoading(false);
+      }
+      if (initial) isFirstLoad.current = false;
     };
-    fetchTaskStats();
-    handleFetchJobs();
-  }, []);
+    fetchData();
+    const intervalId = setInterval(fetchData, 10000);
+    return () => clearInterval(intervalId);
+  }, [filterMinDate, filterMaxDate, filterStatus, filterClientIdSelect, filterJobId]);
 
   useEffect(() => {
     if (!isExpanded) return;
@@ -296,8 +387,12 @@ export default function Task() {
               <fieldset className="resolution-fieldset">
                 <legend>Resolution</legend>
                 <div className="form-grid">
-                  <label>x_resolution: <input type="number" step={1} value={resolution.x_resolution} onChange={e => setResolution({ ...resolution, x_resolution: parseInt(e.target.value, 10) })} /></label>
-                  <label>y_resolution: <input type="number" step={1} value={resolution.y_resolution} onChange={e => setResolution({ ...resolution, y_resolution: parseInt(e.target.value, 10) })} /></label>
+                  <label>x_resolution: <input type="number" step={1} value={resolution.x_resolution} onChange={updateXResolution} /></label>
+                  <label>y_resolution: <input type="number" step={1} value={resolution.y_resolution} onChange={updateYResolution} /></label>
+                  <label className="auto-adjust">
+                    <input type="checkbox" checked={autoAdjustPixelRatio} onChange={e => setAutoAdjustPixelRatio(e.target.checked)} />
+                    automatically adjust pixel ratio
+                  </label>
                 </div>
               </fieldset>
             </div>
@@ -343,17 +438,72 @@ export default function Task() {
               const completed = Object.values(job.task_statuses || {}).filter(s => s === 'COMPLETED').length;
               const pct = totalTasks ? (completed / totalTasks) * 100 : 0;
               return (
-                <div key={job.job_id} className="task-card">
-                  <h3 className="task-title">{job.client_id}</h3>
-                  {job.job_description && <p><strong>Description:</strong> {job.job_description}</p>}
-                  <div className="status-bar">
-                    <div className={`status-fill ${pct < 100 ? 'in-progress' : ''}`} style={{ width: `${pct}%` }} />
+                <React.Fragment key={job.job_id}>
+                  <div className="task-wrapper">
+                    <div className="task-card" onClick={() => setExpandedJobId(expandedJobId === job.job_id ? null : job.job_id)}>
+                      <h3 className="task-title">{job.client_id}</h3>
+                      {job.job_description && <p><strong>Description:</strong> {job.job_description}</p>}
+                      <div className="status-bar">
+                        <div className={`status-fill ${pct < 100 ? 'in-progress' : ''}`} style={{ width: `${pct}%` }} />
+                      </div>
+                      <p>
+                        {completed.toLocaleString()} of {totalTasks.toLocaleString()} tasks completed ({Math.round(pct)}%)
+                      </p>
+                      <p className="job-id">ID: {job.job_id}</p>
+                    </div>
                   </div>
-                  <p>
-                    {completed.toLocaleString()} of {totalTasks.toLocaleString()} tasks completed ({Math.round(pct)}%)
-                  </p>
-                  <p className="job-id">ID: {job.job_id}</p>
-                </div>
+                  {expandedJobId === job.job_id && (
+                    <div className="detail-panel">
+                      <h3>Job Details For: {job.client_id}</h3>
+                      <div className="detail-grid">
+                        <div className="detail-col">
+                          <p><strong>Job ID:</strong> {job.job_id}</p>
+                          <p><strong>Client ID:</strong> {job.client_id}</p>
+                          {job.job_description && <p><strong>Description:</strong> {job.job_description}</p>}
+                          <p><strong>Created At:</strong> {new Date(job.created_at.$date || job.created_at).toLocaleString()}</p>
+                          <p><strong>Completed At:</strong> {job.completed_at ? new Date(job.completed_at.$date || job.completed_at).toLocaleString() : 'Not completed'}</p>
+                          <p><strong>Priority:</strong> {job.priority}</p>
+                          <p><strong>Num Tasks:</strong> {job.num_tasks}</p>
+                        </div>
+                        <div className="detail-col">
+                          <h4>Mandelbrot Region</h4>
+                          <p>x_min: {job.mandelbrot.region.x_min}, x_max: {job.mandelbrot.region.x_max}</p>
+                          <p>y_min: {job.mandelbrot.region.y_min}, y_max: {job.mandelbrot.region.y_max}</p>
+                          <h4>Resolution</h4>
+                          <p>x_resolution: {job.mandelbrot.resolution.x_resolution}</p>
+                          <p>y_resolution: {job.mandelbrot.resolution.y_resolution}</p>
+                        </div>
+                      </div>
+
+                      <details>
+                        <summary>Expand tasks and nodes</summary>
+                        <ul>
+                          {Object.entries(job.tasks_and_nodes || {}).map(([taskId, nodeId]) => (
+                            <li key={taskId}>{taskId} → {nodeId}</li>
+                          ))}
+                        </ul>
+                      </details>
+                      <div className="detail-footer">
+                        {job.status === 'COMPLETED' ? (
+                          <button
+                            className="download-button"
+                            disabled={downloadingJobId === job.job_id}
+                            onClick={() => handleDownloadJob(job.job_id)}
+                          >
+                            {downloadingJobId === job.job_id ? 'Downloading...' : 'Download Job'}
+                          </button>
+                        ) : (
+                          <button className="download-button processing" disabled>
+                            Still Processing
+                          </button>
+                        )}
+                        <button className="close-details" onClick={() => setExpandedJobId(null)}>
+                          Close
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </React.Fragment>
               );
             })}
           </div>
