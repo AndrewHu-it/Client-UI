@@ -8,7 +8,7 @@ export default function Task() {
   const [priority, setPriority] = useState('low');
   const [numTasks, setNumTasks] = useState(16);
   const [region, setRegion] = useState({ x_min: '-2.0', x_max: '1.0', y_min: '-1.5', y_max: '1.5' });
-  const [resolution, setResolution] = useState({ x_resolution: 3840, y_resolution: 2160 });
+  const [resolution, setResolution] = useState({ x_resolution: 3840, y_resolution: 3840 });
   const [autoAdjustPixelRatio, setAutoAdjustPixelRatio] = useState(true);
   const [color, setColor] = useState('simple_rgb');
   const [responseData, setResponseData] = useState(null);
@@ -389,10 +389,13 @@ export default function Task() {
                 <div className="form-grid">
                   <label>x_resolution: <input type="number" step={1} value={resolution.x_resolution} onChange={updateXResolution} /></label>
                   <label>y_resolution: <input type="number" step={1} value={resolution.y_resolution} onChange={updateYResolution} /></label>
-                  <label className="auto-adjust">
-                    <input type="checkbox" checked={autoAdjustPixelRatio} onChange={e => setAutoAdjustPixelRatio(e.target.checked)} />
-                    automatically adjust pixel ratio
-                  </label>
+                  <div className="toggle-container">
+                    <label className="switch">
+                      <input type="checkbox" checked={autoAdjustPixelRatio} onChange={e => setAutoAdjustPixelRatio(e.target.checked)} />
+                      <span className="slider"></span>
+                    </label>
+                    <span className="switch-label">Automatically adjust pixel ratio</span>
+                  </div>
                 </div>
               </fieldset>
             </div>
