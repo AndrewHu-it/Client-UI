@@ -148,7 +148,16 @@ export default function About() {
         <img src={AppIcon} alt="App Icon" style={{ width: '120px', height: 'auto', margin: '0 auto', borderRadius: '20%', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }} />
         <h2 style={{ fontSize: '4rem', margin: '1.5rem 0' }}>Join the Network Today</h2>
         <button
-          onClick={() => downloadUrl && window.open(downloadUrl, '_blank')}
+          onClick={() => {
+            if (downloadUrl) {
+              const downloadLink = document.createElement('a');
+              downloadLink.href = downloadUrl;
+              downloadLink.download = 'CrowdCompute.dmg';
+              document.body.appendChild(downloadLink);
+              downloadLink.click();
+              document.body.removeChild(downloadLink);
+            }
+          }}
           style={{ background: '#6c63ff', color: '#fff', border: 'none', borderRadius: '8px', padding: '1.25rem 3rem', fontSize: '1.5rem', display: 'inline-flex', alignItems: 'center', cursor: downloadUrl ? 'pointer' : 'default', opacity: downloadUrl ? 1 : 0.6 }}
         >
           <span style={{ fontSize: '1.75rem', marginRight: '1rem', color: '#fff' }}></span>
