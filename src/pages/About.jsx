@@ -4,12 +4,15 @@ import BlackholeImage from '../assets/blackhole.png';
 import FractalImage from '../assets/fractal1.png';
 import GraphicImage from '../assets/graphic1.png';
 import AppIcon from '../assets/appicon.png';
-import ClientDemoVideo from '../assets/client-demo.mp4';
 import UserDemoVideo from '../assets/user-demo.mp4';
 
 export default function About() {
   const handleJoinClick = () => {
     document.getElementById('join-section').scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleDemoClick = () => {
+    document.getElementById('demo-section').scrollIntoView({ behavior: 'smooth' });
   };
 
   const [downloadUrl, setDownloadUrl] = useState('');
@@ -35,7 +38,8 @@ export default function About() {
         <div className="hero-header">
           <h2 style={{ fontSize: '4rem', fontWeight: 'bold' }}>Crowd Compute</h2>
           <p className="hero-subtitle">Hundreds of billions of dollars of unused computing resources sit idle all day long</p>
-          <button className="join-button" onClick={handleJoinClick}>Join Network</button>
+          <button className="join-button" onClick={handleDemoClick}>Watch Demo</button>
+          <button className="secondary-button" onClick={handleJoinClick}>Join Network</button>
         </div>
         <div className="hero-media">
           <img src={GalaxyImage} alt="Galaxy" className="hero-image" />
@@ -46,6 +50,10 @@ export default function About() {
         <div className="stat-card"><h3>Eligible Macbooks</h3><p>100M+</p></div>
         <div className="stat-card"><h3>Average Utilization</h3><p>24.5%</p></div>
         <div className="stat-card"><h3>Untapped Value</h3><p>$100B+</p></div>
+      </div>
+      <div className="container demo-bar">
+        <span className="demo-bar-text">Please watch the demo videos</span>
+        <button className="demo-bar-button" onClick={handleDemoClick}>Demo Videos</button>
       </div>
       <div className="hero-content">
         <div className="challenge-section">
@@ -128,17 +136,26 @@ export default function About() {
           </div>
         )}
       </div>
-      {/* Demo Videos */}
-      <div style={{ margin: '3rem 0', width: '100%', boxSizing: 'border-box', padding: '0 1rem' }}>
+      <div id="demo-section" style={{ margin: '3rem 0', width: '100%', boxSizing: 'border-box', padding: '0 1rem' }}>
         <h2 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Demo Videos</h2>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
           <div>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Client Side (Web Interface) </h3>
-            <video src={ClientDemoVideo} controls style={{ width: '100%', borderRadius: '8px' }} />
-            <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>The Client is the one utilizing the network to generate fractals. </p>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Client Side (Web Interface)</h3>
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '8px' }}>
+              <iframe
+                src="https://www.youtube.com/embed/KyrLzmHroD8?si=C0rcaFRYh49l2Obt"
+                title="Client Demo Video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+              ></iframe>
+            </div>
+            <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>The Client is the one utilizing the network to generate fractals.</p>
           </div>
           <div>
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Node Side (Mac App) </h3>
+            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Node Side (Mac App)</h3>
             <video src={UserDemoVideo} controls style={{ width: '100%', borderRadius: '8px' }} />
             <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>The Nodes generate fractals by completing tasks</p>
           </div>
