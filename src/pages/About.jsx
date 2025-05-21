@@ -4,7 +4,6 @@ import BlackholeImage from '../assets/blackhole.png';
 import FractalImage from '../assets/fractal1.png';
 import GraphicImage from '../assets/graphic1.png';
 import AppIcon from '../assets/appicon.png';
-import UserDemoVideo from '../assets/user-demo.mp4';
 
 export default function About() {
   const handleJoinClick = () => {
@@ -156,7 +155,17 @@ export default function About() {
           </div>
           <div>
             <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem' }}>Node Side (Mac App)</h3>
-            <video src={UserDemoVideo} controls style={{ width: '100%', borderRadius: '8px' }} />
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '8px' }}>
+              <iframe
+                src="https://www.youtube.com/embed/JFhMLwWUD14?si=yffDD5LrXKhRQELK"
+                title="Node Demo Video"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+              ></iframe>
+            </div>
             <p style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>The Nodes generate fractals by completing tasks</p>
           </div>
         </div>
