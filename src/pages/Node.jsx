@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+import CompetitionLeaderboard from '../components/CompetitionLeaderboard';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -132,8 +133,8 @@ export default function Node() {
   if (error) return <p>Error: {error}</p>;
 
   return (
-    
     <div className="container node-page">
+      <CompetitionLeaderboard nodes={sortedNodes.slice(0, 10)} />
       <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Node Statistics</h2>
       {/* Summary stats cards */}
       

@@ -1,0 +1,48 @@
+.leaderboard-card {
+  background-color: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  max-width: 900px;
+  width: 90%;
+  margin: 2rem auto;
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+}
+.leaderboard-card h2 {
+  margin-bottom: 1rem;
+  font-size: 2rem;
+  color: #000000;
+  text-align: center;
+}
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.leaderboard-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+  border-bottom: 1px solid #dddddd;
+}
+.leaderboard-item:last-child {
+  border-bottom: none;
+}
+.leaderboard-item .position {
+  width: 2.5rem;
+  text-align: center;
+  font-size: 1.5rem;
+}
+.leaderboard-item .info {
+  flex: 1;
+  margin-left: 0.5rem;
+  font-size: 1.1rem;
+  color: #333333;
+}
+.leaderboard-item .prize {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333333;
+}

@@ -1,0 +1,27 @@
+.competition-banner {
+  background-color: #eef7ec;
+  border: 2px solid #81c784;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 1rem 0;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #428f46;
+}
+
+.competition-text {
+  flex: 1;
+  text-align: left;
+}
+
+.timer {
+  font-size: 1.5rem;
+  min-width: 120px;
+  text-align: right;
+  color: #e83926;
+}

@@ -6,6 +6,7 @@ import Node from './pages/Node';
 import Task from './pages/Task'; 
 import Join from './pages/Join';
 import AppIcon from './assets/appicon.png';
+import CompetitionBanner from './components/CompetitionBanner';
 
 export default function App() {
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function App() {
   return (
     <Router>
       <NavBar />
+      <CompetitionBanner />
       <main className="container">
         <Routes>
           <Route path="/" element={<Navigate to="/about" replace />} />
