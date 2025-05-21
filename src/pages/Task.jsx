@@ -220,26 +220,38 @@ export default function Task() {
   };
 
   const updateXResolution = e => {
-    const newX = parseInt(e.target.value, 10) || 0;
+    const inputVal = parseInt(e.target.value, 10) || 0;
+    const clampedX = Math.min(Math.max(inputVal, 2), 15000);
     if (autoAdjustPixelRatio) {
       const mathWidth = parseFloat(region.x_max) - parseFloat(region.x_min);
       const mathHeight = parseFloat(region.y_max) - parseFloat(region.y_min);
-      const newY = Math.round(newX * mathHeight / mathWidth);
-      setResolution({ x_resolution: newX, y_resolution: newY });
+      let newY = Math.round(clampedX * mathHeight / mathWidth);
+      newY = Math.min(Math.max(newY, 2), 15000);
+      setResolution({ x_resolution: clampedX, y_resolution: newY });
+      // clamp tasks so each slice ≥2px
+      setNumTasks(prev => Math.min(prev, Math.min(500, Math.floor(clampedX/2), Math.floor(newY/2))));
     } else {
-      setResolution({ ...resolution, x_resolution: newX });
+      setResolution({ ...resolution, x_resolution: clampedX });
+      // clamp tasks for updated X resolution
+      setNumTasks(prev => Math.min(prev, Math.min(500, Math.floor(clampedX/2), Math.floor(resolution.y_resolution/2))));
     }
   };
 
   const updateYResolution = e => {
-    const newY = parseInt(e.target.value, 10) || 0;
+    const inputVal = parseInt(e.target.value, 10) || 0;
+    const clampedY = Math.min(Math.max(inputVal, 2), 15000);
     if (autoAdjustPixelRatio) {
       const mathWidth = parseFloat(region.x_max) - parseFloat(region.x_min);
       const mathHeight = parseFloat(region.y_max) - parseFloat(region.y_min);
-      const newX = Math.round(newY * mathWidth / mathHeight);
-      setResolution({ x_resolution: newX, y_resolution: newY });
+      let newX = Math.round(clampedY * mathWidth / mathHeight);
+      newX = Math.min(Math.max(newX, 2), 15000);
+      setResolution({ x_resolution: newX, y_resolution: clampedY });
+      // clamp tasks so each slice ≥2px
+      setNumTasks(prev => Math.min(prev, Math.min(500, Math.floor(newX/2), Math.floor(clampedY/2))));
     } else {
-      setResolution({ ...resolution, y_resolution: newY });
+      setResolution({ ...resolution, y_resolution: clampedY });
+      // clamp tasks for updated Y resolution
+      setNumTasks(prev => Math.min(prev, Math.min(500, Math.floor(resolution.x_resolution/2), Math.floor(clampedY/2))));
     }
   };
 
@@ -373,7 +385,19 @@ export default function Task() {
                 <label>Job Description: <input type="text" value={jobDescription} onChange={e => setJobDescription(e.target.value)} required /></label>
                 <label>Priority: <select value={priority} onChange={e => setPriority(e.target.value)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
                 <label>Color: <select value={color} onChange={e => setColor(e.target.value)}><option value="simple_rgb">RGB</option><option value="classic_mono">Classic Mono</option><option value="escape_time_spectrum">Escape Time Spectrum</option><option value="inferno_depth">Inferno Depth</option><option value="deep_ocean">Deep Ocean</option><option value="galactic">Galactic</option><option value="fractal_forest">Fractal Forest</option></select></label>
-                <label>Number of Tasks: <input type="number" min={1} step={1} value={numTasks} onChange={e => setNumTasks(parseInt(e.target.value, 10))} /></label>
+                <label>Number of Tasks: <input type="number"
+                  min={1}
+                  // dynamically cap tasks so resolution/numTasks ≥2
+                  max={Math.min(500, Math.floor(resolution.x_resolution/2), Math.floor(resolution.y_resolution/2))}
+                  step={1}
+                  value={numTasks}
+                  onChange={e => {
+                    const val = parseInt(e.target.value, 10) || 0;
+                    const maxByRes = Math.min(500, Math.floor(resolution.x_resolution/2), Math.floor(resolution.y_resolution/2));
+                    const clamped = Math.min(Math.max(val, 1), maxByRes);
+                    setNumTasks(clamped);
+                  }} />
+                </label>
               </div>
               <fieldset className="region-fieldset">
                 <legend>Region</legend>
@@ -387,8 +411,8 @@ export default function Task() {
               <fieldset className="resolution-fieldset">
                 <legend>Resolution</legend>
                 <div className="form-grid">
-                  <label>x_resolution: <input type="number" step={1} value={resolution.x_resolution} onChange={updateXResolution} /></label>
-                  <label>y_resolution: <input type="number" step={1} value={resolution.y_resolution} onChange={updateYResolution} /></label>
+                  <label>x_resolution: <input type="number" min={2} max={15000} step={1} value={resolution.x_resolution} onChange={updateXResolution} /></label>
+                  <label>y_resolution: <input type="number" min={2} max={15000} step={1} value={resolution.y_resolution} onChange={updateYResolution} /></label>
                   <div className="toggle-container">
                     <label className="switch">
                       <input type="checkbox" checked={autoAdjustPixelRatio} onChange={e => setAutoAdjustPixelRatio(e.target.checked)} />
