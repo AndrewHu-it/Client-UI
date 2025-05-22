@@ -229,11 +229,11 @@ export default function Task() {
       newY = Math.min(Math.max(newY, 2), 15000);
       setResolution({ x_resolution: clampedX, y_resolution: newY });
       // clamp tasks so each slice ≥2px
-      setNumTasks(prev => Math.min(prev, Math.min(100, Math.floor(clampedX/2), Math.floor(newY/2))));
+      setNumTasks(prev => Math.min(prev, Math.min(250, Math.floor(clampedX/2), Math.floor(newY/2))));
     } else {
       setResolution({ ...resolution, x_resolution: clampedX });
       // clamp tasks for updated X resolution
-      setNumTasks(prev => Math.min(prev, Math.min(100, Math.floor(clampedX/2), Math.floor(resolution.y_resolution/2))));
+      setNumTasks(prev => Math.min(prev, Math.min(250, Math.floor(clampedX/2), Math.floor(resolution.y_resolution/2))));
     }
   };
 
@@ -247,11 +247,11 @@ export default function Task() {
       newX = Math.min(Math.max(newX, 2), 15000);
       setResolution({ x_resolution: newX, y_resolution: clampedY });
       // clamp tasks so each slice ≥2px
-      setNumTasks(prev => Math.min(prev, Math.min(100, Math.floor(newX/2), Math.floor(clampedY/2))));
+      setNumTasks(prev => Math.min(prev, Math.min(250, Math.floor(newX/2), Math.floor(clampedY/2))));
     } else {
       setResolution({ ...resolution, y_resolution: clampedY });
       // clamp tasks for updated Y resolution
-      setNumTasks(prev => Math.min(prev, Math.min(100, Math.floor(resolution.x_resolution/2), Math.floor(clampedY/2))));
+      setNumTasks(prev => Math.min(prev, Math.min(250, Math.floor(resolution.x_resolution/2), Math.floor(clampedY/2))));
     }
   };
 
@@ -388,12 +388,12 @@ export default function Task() {
                 <label>Number of Tasks: <input type="number"
                   min={1}
                   // dynamically cap tasks so resolution/numTasks ≥2
-                  max={Math.min(100, Math.floor(resolution.x_resolution/2), Math.floor(resolution.y_resolution/2))}
+                  max={Math.min(250, Math.floor(resolution.x_resolution/2), Math.floor(resolution.y_resolution/2))}
                   step={1}
                   value={numTasks}
                   onChange={e => {
                     const val = parseInt(e.target.value, 10) || 0;
-                    const maxByRes = Math.min(100, Math.floor(resolution.x_resolution/2), Math.floor(resolution.y_resolution/2));
+                    const maxByRes = Math.min(250, Math.floor(resolution.x_resolution/2), Math.floor(resolution.y_resolution/2));
                     const clamped = Math.min(Math.max(val, 1), maxByRes);
                     setNumTasks(clamped);
                   }} />
