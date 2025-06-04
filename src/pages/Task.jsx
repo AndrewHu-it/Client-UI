@@ -370,70 +370,7 @@ export default function Task() {
 
 
 
-      <div className="task-banner light-blue-banner">
-        <p className="banner-text">
-          Want to try it out?{' '}
-          <button className="generate-button" onClick={() => setIsExpanded(!isExpanded)}>
-            {isExpanded ? 'Collapse' : 'Generate Now'}
-          </button>
-        </p>
-        {isExpanded && (
-          <div className="expanded-content">
-            <div className="form-section">
-              <div className="form-grid">
-                <label>Client ID: <input type="text" value={clientId} onChange={e => setClientId(e.target.value)} required /></label>
-                <label>Job Description: <input type="text" value={jobDescription} onChange={e => setJobDescription(e.target.value)} required /></label>
-                <label>Priority: <select value={priority} onChange={e => setPriority(e.target.value)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
-                <label>Color: <select value={color} onChange={e => setColor(e.target.value)}><option value="simple_rgb">RGB</option><option value="classic_mono">Classic Mono</option><option value="escape_time_spectrum">Escape Time Spectrum</option><option value="inferno_depth">Inferno Depth</option><option value="deep_ocean">Deep Ocean</option><option value="galactic">Galactic</option><option value="fractal_forest">Fractal Forest</option></select></label>
-                <label>Number of Tasks: <input type="number"
-                  min={1}
-                  // dynamically cap tasks so resolution/numTasks ≥2
-                  max={Math.min(250, Math.floor(resolution.x_resolution/2), Math.floor(resolution.y_resolution/2))}
-                  step={1}
-                  value={numTasks}
-                  onChange={e => {
-                    const val = parseInt(e.target.value, 10) || 0;
-                    const maxByRes = Math.min(250, Math.floor(resolution.x_resolution/2), Math.floor(resolution.y_resolution/2));
-                    const clamped = Math.min(Math.max(val, 1), maxByRes);
-                    setNumTasks(clamped);
-                  }} />
-                </label>
-              </div>
-              <fieldset className="region-fieldset">
-                <legend>Region</legend>
-                <div className="form-grid">
-                  <label>x_min: <input type="number" step="0.01" value={region.x_min} onChange={e => setRegion({ ...region, x_min: e.target.value })} /></label>
-                  <label>x_max: <input type="number" step="0.01" value={region.x_max} onChange={e => setRegion({ ...region, x_max: e.target.value })} /></label>
-                  <label>y_min: <input type="number" step="0.01" value={region.y_min} onChange={e => setRegion({ ...region, y_min: e.target.value })} /></label>
-                  <label>y_max: <input type="number" step="0.01" value={region.y_max} onChange={e => setRegion({ ...region, y_max: e.target.value })} /></label>
-                </div>
-              </fieldset>
-              <fieldset className="resolution-fieldset">
-                <legend>Resolution</legend>
-                <div className="form-grid">
-                  <label>x_resolution: <input type="number" min={2} max={15000} step={1} value={resolution.x_resolution} onChange={updateXResolution} /></label>
-                  <label>y_resolution: <input type="number" min={2} max={15000} step={1} value={resolution.y_resolution} onChange={updateYResolution} /></label>
-                  <div className="toggle-container">
-                    <label className="switch">
-                      <input type="checkbox" checked={autoAdjustPixelRatio} onChange={e => setAutoAdjustPixelRatio(e.target.checked)} />
-                      <span className="slider"></span>
-                    </label>
-                    <span className="switch-label">Automatically adjust pixel ratio</span>
-                  </div>
-                </div>
-              </fieldset>
-            </div>
-            <div className="preview-section">
-              <h3>Low Resolution Preview</h3>
-              {isPreviewLoading ? <p className="preview-loading">Generating preview...</p> : <canvas ref={canvasRef} className="preview-canvas" />}
-              <p className="preview-note">This is a low-resolution preview. The final image will be at {resolution.x_resolution}x{resolution.y_resolution} pixels.</p>
-            </div>
-            <div className="submit-section">
-              <button className="submit-button" onClick={handleSubmit} disabled={submitting || !clientId || !jobDescription}>{submitting ? 'Submitting...' : 'Submit Job'}</button>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Entire task-banner and its content (fractal generation UI) was here. */}
 
       <div className="jobs-section">
         <h2>All Jobs</h2>
