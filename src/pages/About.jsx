@@ -170,6 +170,20 @@ export default function About() {
           </div>
         </div>
       </div>
+      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+        <h3 style={{ fontSize: '1.75rem', marginBottom: '1rem' }}>Senior Project Presentation</h3>
+        <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, width: '100%', overflow: 'hidden', borderRadius: '8px' }}>
+          <iframe
+            src="https://www.youtube.com/embed/-siww6fSKoM?si=47M7CrxvLDzAY3vs"
+            title="Senior Project Presentation"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
+          ></iframe>
+        </div>
+      </div>
       <div id="join-section" style={{ background: '#fff', padding: '4rem 0', textAlign: 'center', position: 'relative' }}>
         <img src={AppIcon} alt="App Icon" style={{ width: '120px', height: 'auto', margin: '0 auto', borderRadius: '20%', boxShadow: '0 8px 30px rgba(0,0,0,0.3)' }} />
         <h2 style={{ fontSize: '4rem', margin: '1.5rem 0' }}>Join the Network Today</h2>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import _ from 'lodash'; // Assuming lodash is installed for debounce
+import { USE_STATIC_STATS } from '../config';
 
 export default function Task() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -17,6 +18,7 @@ export default function Task() {
   const [taskStats, setTaskStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(true);
   const [statsError, setStatsError] = useState(null);
+
   const [filterMinDate, setFilterMinDate] = useState('');
   const [filterMaxDate, setFilterMaxDate] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -340,26 +342,65 @@ export default function Task() {
 
       <div className="stats-section">
       <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Use Statistics</h2> {/* ⚠️ CHANGED: made text larger and bolder */}
-      {statsLoading ? (
-          <p>Loading statistics…</p>
-        ) : statsError ? (
-          <p>Error: {statsError}</p>
-        ) : taskStats ? (
-          <div className="stats-grid">
-            <div className="stat-card">
-              <h3>Completed Jobs</h3>
-              <p>{taskStats.completed_jobs.toLocaleString()}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Completed Tasks</h3>
-              <p>{taskStats.completed_tasks.toLocaleString()}</p>
-            </div>
-            <div className="stat-card">
-              <h3>Total Pixels</h3>
-              <p>{taskStats.total_pixels.toLocaleString()}</p>
-            </div>
-          </div>
-        ) : null}
+      {/* Original dynamic stats block for reference:
+{statsLoading ? (
+  <p>Loading statistics…</p>
+) : statsError ? (
+  <p>Error: {statsError}</p>
+) : taskStats ? (
+  <div className="stats-grid">
+    <div className="stat-card">
+      <h3>Completed Jobs</h3>
+      <p>{taskStats.completed_jobs.toLocaleString()}</p>
+    </div>
+    <div className="stat-card">
+      <h3>Completed Tasks</h3>
+      <p>{taskStats.completed_tasks.toLocaleString()}</p>
+    </div>
+    <div className="stat-card">
+      <h3>Total Pixels</h3>
+      <p>{taskStats.total_pixels.toLocaleString()}</p>
+    </div>
+  </div>
+) : null}
+*/}
+{USE_STATIC_STATS ? (
+  <div className="stats-grid">
+    <div className="stat-card">
+      <h3>Completed Jobs</h3>
+      <p>2,162</p>
+    </div>
+    <div className="stat-card">
+      <h3>Completed Tasks</h3>
+      <p>415,366</p>
+    </div>
+    <div className="stat-card">
+      <h3>Total Pixels</h3>
+      <p>121,162,173,073</p>
+    </div>
+  </div>
+) : (
+  statsLoading ? (
+    <p>Loading statistics…</p>
+  ) : statsError ? (
+    <p>Error: {statsError}</p>
+  ) : taskStats ? (
+    <div className="stats-grid">
+      <div className="stat-card">
+        <h3>Completed Jobs</h3>
+        <p>{taskStats.completed_jobs.toLocaleString()}</p>
+      </div>
+      <div className="stat-card">
+        <h3>Completed Tasks</h3>
+        <p>{taskStats.completed_tasks.toLocaleString()}</p>
+      </div>
+      <div className="stat-card">
+        <h3>Total Pixels</h3>
+        <p>{taskStats.total_pixels.toLocaleString()}</p>
+      </div>
+    </div>
+  ) : null
+)}
       </div>
 
       <div
@@ -397,7 +438,7 @@ export default function Task() {
           <p>Loading jobs…</p>
         ) : (
           <div className="tasks-grid">
-            {jobsList.map(job => {
+            {jobsList.slice(0, 100).map(job => {
               const totalTasks = job.num_tasks;
               const completed = Object.values(job.task_statuses || {}).filter(s => s === 'COMPLETED').length;
               const pct = totalTasks ? (completed / totalTasks) * 100 : 0;
