@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import _ from 'lodash'; // Assuming lodash is installed for debounce
-import { USE_STATIC_STATS } from '../config';
+
 
 export default function Task() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -341,77 +341,29 @@ export default function Task() {
 
 
       <div className="stats-section">
-      <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Use Statistics</h2> {/* ⚠️ CHANGED: made text larger and bolder */}
-      {/* Original dynamic stats block for reference:
-{statsLoading ? (
-  <p>Loading statistics…</p>
-) : statsError ? (
-  <p>Error: {statsError}</p>
-) : taskStats ? (
-  <div className="stats-grid">
-    <div className="stat-card">
-      <h3>Completed Jobs</h3>
-      <p>{taskStats.completed_jobs.toLocaleString()}</p>
-    </div>
-    <div className="stat-card">
-      <h3>Completed Tasks</h3>
-      <p>{taskStats.completed_tasks.toLocaleString()}</p>
-    </div>
-    <div className="stat-card">
-      <h3>Total Pixels</h3>
-      <p>{taskStats.total_pixels.toLocaleString()}</p>
-    </div>
-  </div>
-) : null}
-*/}
-{USE_STATIC_STATS ? (
-  <div className="stats-grid">
-    <div className="stat-card">
-      <h3>Completed Jobs</h3>
-      <p>2,162</p>
-    </div>
-    <div className="stat-card">
-      <h3>Completed Tasks</h3>
-      <p>415,366</p>
-    </div>
-    <div className="stat-card">
-      <h3>Total Pixels</h3>
-      <p>121,162,173,073</p>
-    </div>
-  </div>
-) : (
-  statsLoading ? (
-    <p>Loading statistics…</p>
-  ) : statsError ? (
-    <p>Error: {statsError}</p>
-  ) : taskStats ? (
-    <div className="stats-grid">
-      <div className="stat-card">
-        <h3>Completed Jobs</h3>
-        <p>{taskStats.completed_jobs.toLocaleString()}</p>
-      </div>
-      <div className="stat-card">
-        <h3>Completed Tasks</h3>
-        <p>{taskStats.completed_tasks.toLocaleString()}</p>
-      </div>
-      <div className="stat-card">
-        <h3>Total Pixels</h3>
-        <p>{taskStats.total_pixels.toLocaleString()}</p>
-      </div>
-    </div>
-  ) : null
-)}
+        <h2 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Statistics</h2>
+        {statsLoading ? (
+          <p>Loading statistics…</p>
+        ) : statsError ? (
+          <p>Error: {statsError}</p>
+        ) : taskStats ? (
+          <div className="stats-grid">
+            <div className="stat-card">
+              <h3>Completed Jobs</h3>
+              <p>{(taskStats.completed_jobs ?? 0).toLocaleString()}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Completed Tasks</h3>
+              <p>{(taskStats.completed_tasks ?? 0).toLocaleString()}</p>
+            </div>
+            <div className="stat-card">
+              <h3>Total Pixels</h3>
+              <p>{(taskStats.total_pixels ?? 0).toLocaleString()}</p>
+            </div>
+          </div>
+        ) : null}
       </div>
 
-      <div
-        className="jobs-section"
-        style={{ marginTop: '3rem' }}
-      ></div>
-    
-
-
-
-      {/* Entire task-banner and its content (fractal generation UI) was here. */}
 
       <div className="jobs-section">
         <h2>All Jobs</h2>
